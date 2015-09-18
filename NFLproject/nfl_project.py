@@ -1,9 +1,13 @@
 from urllib import request
 from bs4 import BeautifulSoup
 import json
-import heapq
 from pprint import pprint
 from scipy import stats
+from utils import truncate
+
+#############
+### Setup ###
+#############
 
 teams = ['SF', 'CHI', 'CIN', 'BUF', 'DEN', 'CLE', 'TB', 'ARI',
              'SD', 'KC', 'IND', 'DAL', 'MIA', 'PHI', 'ATL', 'NYG',
@@ -18,41 +22,33 @@ url_form_stats = 'http://api.nfldata.apiphany.com/trial/json/TeamSeasonStats/201
 
 url_form_sched = 'http://api.nfldata.apiphany.com/trial/json/Schedules/2015?subscription-key=b7d211fd970143a2940d9905fe5c2447'
 
-###Builder Functions###
+#################################
+### Data Extraction Functions ###
+#################################
 
-def truncate(f, n):
-    '''Truncates/pads a float f to n decimal places without rounding'''
-    s = '{}'.format(f)
-    if 'e' in s or 'E' in s:
-        return '{0:.{1}f}'.format(f, n)
-    i, p, d = s.partition('.')
-    return '.'.join([i, (d+'0'*n)[:n]])
+## These functions extract the NFL team performance data from external API's and save them to local text files to 
+## avoid having to poing the API. The YEAR argument can be entered as an int and the TEAM argument can be entered
+## as a string abbreviation as seen in the teams array in Setup. With much more experience now than at the time, 
+## I would add simple MongoDB integration as I worked in JSON format and extensively with dictionaries. This would
+## also allow me to avoid using 'eval' which I now know is frowned upon. 
 
 def pullSeasonData(year):
-    # enter year as int in yyyy format
     file = open("NFLstats" + str(year % 100).zfill(2) + ".txt", "w")
     url = 'http://api.nfldata.apiphany.com/trial/json/TeamSeasonStats/' + year + '?subscription-key=b7d211fd970143a2940d9905fe5c2447'
     obj = request.urlopen(url)
     data = str(json.load(obj))
     file.write(data)
     file.close()
-    # data is in the format of a list with dictionary elements
-    # data is converted to string to be written to txt file; can use eval() to undo
 
 def pullSeasonSchedule(year):
-    # enter year as int in yyyy format
     file = open("NFLsched" + str(year % 100).zfill(2) + ".txt", "w")
     url = 'http://api.nfldata.apiphany.com/trial/json/Schedules/' + year + '?subscription-key=b7d211fd970143a2940d9905fe5c2447'
     obj = request.urlopen(url)
     data = str(json.load(obj))
     file.write(data)
     file.close()
-    # data is in the format of a list with dictionary elements
-    # data is converted to string to be written to txt file; can use eval() to undo
 
 def getTeamSchedule(team,year):
-    # enter team as string of abbreviation as seen in list Teams
-    # enter year as int in yyyy format
     data_file = open("NFLsched" + str(year % 100).zfill(2) + ".txt", "r+")
     data = eval(data_file.read())
     schedule = []
@@ -63,11 +59,8 @@ def getTeamSchedule(team,year):
             schedule.append(str(item["HomeTeam"]))
     data_file.close()
     return schedule
-    # returns schedule in order as a list which can be iterated over
  
 def getLocationSchedule(team,year):
-    # enter team as string of abbreviation as seen in list Teams
-    # enter year as int in yyyy format
     data_file = open("NFLsched" + str(year % 100).zfill(2) + ".txt", "r+")
     data = eval(data_file.read())
     location = []
@@ -78,7 +71,16 @@ def getLocationSchedule(team,year):
             location.append("A")
     data_file.close()
     return location
-    #returns location = home/away in order as a list which can be iterated over
+    #returns home/away in order as a list which can be iterated over
+
+#####################################
+### Qualitative Factors Functions ###
+#####################################
+
+## The functions in this section look to use qualitative factors such as personnel changes, injuries, 
+## coaching changes, etc... to develop position group power rankings which are used to provide quantitative 
+## performance boosts or costs into the coming year. This is a way of translating last year's performance
+## statistics into this year's projections. 
 
 def assignOffensiveRatings(year):
     scale = {"Coaching": 25, "QB": 25, "O-Line": 20, "WR/TE": 15, "RB": 15}
@@ -96,8 +98,6 @@ def assignOffensiveRatings(year):
     return offensiveRatings
 
 def offensiveBoosts(prev_year, proj_year):
-    # enter year as int in yyyy format
-    # enter in the previous year and the target projected year to find percentage boost due to personnel
     prevYearOffensiveRatings = assignOffensiveRatings(prev_year)
     projYearOffensiveRatings = assignOffensiveRatings(proj_year)
     offensiveBoosts = {} 
@@ -121,8 +121,6 @@ def assignDefensiveRatings(year):
     return defensiveRatings
 
 def defensiveBoosts(prev_year, proj_year):
-    # enter year as int in yyyy format
-    # enter in the previous year and the target projected year to find percentage boost due to personnel
     prevYearDefensiveRatings = assignDefensiveRatings(prev_year)
     projYearDefensiveRatings = assignDefensiveRatings(proj_year)
     defensiveBoosts = {} 
@@ -131,9 +129,18 @@ def defensiveBoosts(prev_year, proj_year):
     return defensiveBoosts
     # returns boosts in terms of positive or negative percent indicating an improvement or worsening of personnel/injuries
         
+######################################
+### Quantitative Factors Functions ###
+######################################
+
+## Here we dive into the performance stats and develop a method to handicap games or, in other words, calculate
+## the spreads which drive our probabilistic distributions. The primary stat used is YARDS PER POINT which can be 
+## used to calculate offensive and defensive efficiency. The qualitative rankings in the previous section go 
+## toward adjusting the YARDS PER POINT SPREAD based on perceived improvements or declines in qualitative 
+## performance metrics. The last function here lays out a method to calculate the PER GAME win probability for 
+## a mathchup using YPP Spreads.
+
 def assignOffensiveYPP(year):
-    # enter year as int in yyyy format
-    # if we want to predict 2014 wins, enter 2014
     stats_file = open("NFLstats" + str((year - 1) % 100).zfill(2) + ".txt", "r")
     stats = eval(stats_file.read())
     offensiveBoost = offensiveBoosts(year -1 , year)
@@ -144,8 +151,6 @@ def assignOffensiveYPP(year):
     return offensiveYPP
 
 def assignDefensiveYPP(year):
-    # enter year as int in yyyy format
-    # if we want to predict 2014 wins, enter 2014
     stats_file = open("NFLstats" + str((year - 1) % 100).zfill(2) + ".txt", "r")
     stats = eval(stats_file.read())
     defensiveBoost = defensiveBoosts(year - 1, year)
@@ -156,8 +161,6 @@ def assignDefensiveYPP(year):
     return defensiveYPP
 
 def assignYPPspread(year):
-    # enter year as int in yyyy format
-    # if we want to predict 2014 wins, enter 2013 stats
     stats_file = open("NFLstats" + str((year - 1) % 100).zfill(2) + ".txt", "r")
     stats = eval(stats_file.read())
     YPPspread = {}
@@ -169,8 +172,6 @@ def assignYPPspread(year):
     return YPPspread
 
 def gameWinProbability(year,team,opponent):
-    # enter year as int in yyyy format
-    # will output win percentage from the perspective of 'team' input
     YPPspread = assignYPPspread(year)
     schedule = getTeamSchedule(team,year)
     location = getLocationSchedule(team,year)
@@ -181,6 +182,16 @@ def gameWinProbability(year,team,opponent):
     distribution = stats.norm(line,13)
     winProbability = round((1 - distribution.cdf(0)), 2)
     return winProbability
+
+##################################################
+### Vegas Odds/Lines Data Extraction Functions ###
+##################################################
+
+## This is another data extraction section. I use a custom built web scraper to collect Odds/Lines
+## from Vegas Bookies. Web Scraping is a variable process involving trial and error so a large 
+## challenge is isolating the data you need and formatting it for efficienct use within the program.
+## We do that here and then lastly, use the over/under odds data to calculate the implied probabilities
+## Vegas is showing for teams finishing above/below the line (Vegas's expected win total).
 
 def assignOdds(data):
     teams_unsorted = ['SF', 'CHI', 'CIN', 'BUF', 'DEN', 'CLE', 'TB', 'ARI',
@@ -225,12 +236,24 @@ def vegasProbabilites(teamOdds):
         else:
             teamOdds[team][2] = round((100.0 / (under + 100)), 2)
     return teamOdds
-    
+
+######################    
 ### Main Functions ###
+######################
+
+## This section is the real functionality of the program. We use our statistical spreads to calculate the 
+## win probabilite for every team in every game they play that year. We then sum up those probabilities, 
+## as dictated by the method of indicators, to determine the expected win total for each team in the coming
+## year. Our per game scoring distribution is normal with mean derived from our YPP spreading technique, and 
+## standard deviation obtained through research into how games have unfolded in the past, namely through 
+## academic papers. Our next steps are to determine the probability of our expected win scenario occurring under
+## the implied Vegas Distribition for win totals which we obtained in the last section. With these calculations, 
+## we can find the edge in certain bets and make recommendations on whether to take the over or under bet. 
+## Of note is that if our predicted win total and the Vegas predicted win total differs by less than 1.5 games, 
+## we conclude that there is no edge to be had in the bet. Recommendations are returned as a dict with all the 
+## relevant information.
 
 def expectedWins(year):
-    # enter year as int in yyyy format
-    # enter the year you want to make predictions for
     YPPspread = assignYPPspread(year)
     expectedWins = {}
     for team in teams:
@@ -289,6 +312,15 @@ def generalRecommendations(year):
 if __name__ == '__main__':
     year = int(input("Enter current year to see betting recommendations: "))
     pprint(generalRecommendations(year), width=1)
+
+
+## In this GitHUb demo, there is only support for the 2015 season. If you pip install the dependencies, run the program, 
+## and enter 2015, you should get the right bet predictions. Feel free to add to the code or make changes on a separate
+## branch. This was my first ever actual functional Python Program. It was a lot of fun. Perhaps if I developed it now, 
+## with more experience under my belt it would look different. I would use OO design, database integration, and try to 
+## research into more advanced mathematica methods to make predictions. Current coaches examine stats on a rolling 4 week
+## basis. I was thinking of turning this into a week to week betting app where stats over a rolling 4 week period are 
+## analyzed and bets are recommended through analysis of the most recent performance statistics. 
 
    
 
