@@ -4,9 +4,9 @@ import threading
 import json
 from pymongo import MongoClient
 
-############################################
-### Main Classes for API access ###
-############################################
+###############################################
+### Main Classes for Hardware/Server access ###
+###############################################
 
 class SigmaClient:
 
