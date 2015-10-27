@@ -53,7 +53,12 @@ this data as needed, Making backup and realignment requests to the other server 
 efficient backing up of primary and secondary data, and lastly, Accepting data from clients and processing/storing this data based 
 on the intended action, i.e. backup, realignment, storing updating user info etc. 
 
-3.) The third module is called PiggyNetwork.py. This contains the framework for our two servers to run concurrently using threads.  I needed to use the python multiprocessing module instead of threading to bypass the effects of the Python interpreter GIL. However, python multiprocessing has poor Windows OS support which is why I used threading to simulate the desired effect. In practice, if using Linux or Apple OS, the multiprocessing module is the way to go and its API is the same as the python threading module. When initialized, it simply creates two server instances with the appropriate attributes and adds each server to the other's network. The only notable method here is the initialize() method which starts up our concurrent system.
+3.) The third module is called PiggyNetwork.py. This contains the framework for our two servers to run concurrently using 
+threads.  I needed to use the python multiprocessing module instead of threading to bypass the effects of the Python interpreter GIL. 
+However, python multiprocessing has poor Windows OS support which is why I used threading to simulate the desired effect. In 
+practice, if using Linux or Apple OS, the multiprocessing module is the way to go and its API is the same as the python 
+threading module. When initialized, it simply creates two server instances with the appropriate attributes and adds each 
+server to the other's network. The only notable method here is the initialize() method which starts up our concurrent system.
 
 4.) The fourth module, PiggyBank.py, is our our controller module and contains all the bank functionality. When initialized,
 it creates an instance of our PiggyNetwork and then processes all user requests by loading the relevant data from the servers,
