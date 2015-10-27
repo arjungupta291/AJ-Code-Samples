@@ -429,7 +429,7 @@ class Contact(Profile):
             br.open("http://www.linkedin.com")
             br.form = list(br.forms())[0]
             br['session_key'] = 'arjungupta291@berkeley.edu'
-            br['session_password'] = 'beckham23'
+            br['session_password'] = '*fake_password*'
             br.submit()
             response = br.response()
             ## Navigate to our user's page ##
