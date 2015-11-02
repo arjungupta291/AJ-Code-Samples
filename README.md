@@ -11,5 +11,5 @@ PROJECTS:
 3.) Distributed Banking System -droveBank file (Consult README.txt within project file)
       
 4.) Tic Tac Toe Web API project (Look at documentation.txt for API docs)
-        -Code samplse of Maven/Dropwizard project so cannot be run. 
+        -Code samples of Maven/Dropwizard project so cannot be run. 
 
