@@ -1,0 +1,123 @@
+##########################################
+### Complete Tic Tac Toe Documentation ###
+##########################################
+
+
+Contents
+########
+
+1.) Brief Strategic Explanation
+
+2.) API Documentation
+
+3.) Building and Running
+
+4.) Further Plans and Current Shortcomings
+
+
+1: Brief Strategic Explanation
+##############################
+
+The Model component of this project resides in three files:
+	-GameBoard.java
+	-Player.java
+	-Game.java
+
+These files contain the objects which run the game logic and are largely self explanatory due to the presence of extensive in file comments/documentation. The enforcing of the rules is quite simple, as are some of the other basic mechansisms. 
+
+Of note is my strategy to check for winning combinations. In the naive way, one would check every possible combination after every turn to see if a winning combination is present at the given moment. Instead, I use a HashMap which contains an array of length 2 hashed against the string which represents the starting position of each of the 8 winning combinations. The value of the array at index 0 corresponds to the score for player0 at each starting point and likewise for player1. Since a winner can only be declared after a move, based on the location of the currently placed piece, I narrow down the scoring combinations affected, and increment the score at the appropriate index for the current player. Hence, instead of checking for 8 possible combinations everytime, I narrow it down to checking 2or3or4 combinations for every turn which also maintains the constant time lookup characteristice consistent with a HashMap. Keeping a running total also prevents having to iterate through every square for every combination. This optimization doesn't seem like much on a 3x3 board but imagine if we were playing NxN tic tac toe. For large numbers, this method would undoubtedly have a more favorable runtime. 
+
+2: API Documentation
+####################
+
+1.) POST method to create a new game:
+	
+	Format: http://localhost:8080/game/create_game/{name}
+
+	Parameters: -NAME is the name of the player creating the game.
+				 It is really just an identifier. 
+
+	Returns: -String confirming Creation of Game.
+			 -String of game ID number for future reference.
+			 -String of current board view (empty board)
+
+2.) PUT method to add second player to an existing game:
+
+	Format: http://localhost:8080/game/add_player/{id}/{name}
+
+	Parameters: -ID is identifier for the game you wish to add new player to.
+				-NAME is the name of the new/added player.
+
+	Returns: String confirmation of player being added.
+
+3.) PUT method to make a move in a Game:
+
+	Format: http://localhost:8080/game/make_move/{id}/{name}/{coordinate}
+
+	Parameters: -ID is the identifier for the game object.
+				-NAME is name of the player whose turn it is
+				 (Game Creator always goes first with X piece)
+				-COORDINATE is square in which player wants to put piece.
+				 Reference the below diagram to make sense of correct
+				 coordinate input strings:
+
+				    1   2   3
+				 A    |   |
+				   -----------
+				 B    |   |
+				   -----------
+				 C    |   |
+
+	Returns: One of the Following self explanatory messages and a view of the
+			 current state of the board.
+			 -"There is only one player in this game. Add another to continue"
+			 -"Move attempted in occupied square. Try again."
+			 -"{name} has won the game."
+			 -"Game has ended as a Draw."
+			 -"Wrong player attempting to take turn."
+			 -"This Game has ended."
+			 -"On to the next turn."
+
+4.) GET method to view specified board:
+
+	Format: http://localhost:8080/game/view_board/{id}
+
+	Parameters: -ID is the number of the Game wished to be viewed.
+
+	Returns: -String image of specified Board or a message indicating
+			  that the queried Game doesn't exist.
+
+5.) DELETE method to erase Game object:
+
+	Format: http://localhost:8080/game/delete_game/{id}
+
+	Parameters: -ID is the number of the Game wished to be deleted.
+
+	Returns: -String confirmation of deletion or notification that game
+			  doesn't exist.
+
+
+3: Building and Running
+#######################
+
+There are three simple instructions to build and run the project:
+	1.) travel to directory: ~{your path here}/TicTacToe/tictactoeAPI
+	2.) enter command: mvn package
+	3.) enter command: java -jar target/tictactoeAPI-1.0-SNAPSHOT.jar server
+
+To test the project we can use the cURL command line tool as such:
+	Format of curl commands: 
+
+		--> curl -X {method} http://localhost:8080/game/{desired endpoint}
+			
+			-method is in set {GET, POST, PUT, DELETE}
+
+
+4: Current Shortcomings and Further Plans
+#########################################
+
+I would like to discuss the shortcomings of this project. I can think
+of two main areas. Firstly, due to time constraints I was not able to integrate
+a database schema. Instead I used a makeshift HashMap database which hashed Game objects against their ID keys. We could easily carry on this format by using MongoDB and following the same pattern. Secondly, in the effort of ensuring that the current board state was printed out upon each make move request, I neglected sending out proper HTTP codes. This would be something I would have to get right if given more time. For now, if the right code was already being returned by curl, I left it, otherwise I printed in text the correct code. Lastly, due to time constraints and the simplicity of the backend logic, I left out testing modules. Under normal circumstances, I would write unit tests using JUnit, to test each individual component of the model, and write integration tests to ensure that the correct ouput occured everytime and under a myriad of different situations.
+
+As for the overall design, and modularity of the project, I think that it is well organized and well documented. I enforce strict abstraction barriers and encapsulation principles to keep the code easily readable and scalable if need be. The design was slightly different knowing that for the purposes of a RESTful API, the processing of code had to be different than if playing the game somehow. This was a fun challenge and I am confident that my API design holds up to the major standards of being RESTful. Namely, maintaining the client-server relationship, being stateless, and having a uniform interface which is responsive to the four main methods.

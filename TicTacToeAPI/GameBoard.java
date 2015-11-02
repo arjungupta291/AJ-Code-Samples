@@ -1,7 +1,6 @@
 /** This is our board class which represents the Tic Tac Toe
     Surface. Consult ReadMe for explanation on design strategy. */
-
-package TicTacToe;
+package com.tttapi.start.resources;
 
 import java.util.HashMap;
 
@@ -12,21 +11,23 @@ class GameBoard {
 	/** Number of columns on our board. */
 	private static int _numColumns = 3;
 	/** Representation of surface as 2D Array. */
-	private String[][] board;
+	private String[][] _board;
 	/** Representation of Win Possibilites with Key corresponding to 
 	    start position of row/column/diagonal and value corresponding
 	    to an array containing score of X player at index 0 and score
 	    of O player at index 1. */
-	private HashMap<String, int[]> _winTracker = new HashMap<String, int[]>(); 
+	private HashMap<String, int[]> _winTracker = new HashMap<String, int[]>();
+	/** Tells us if last move was in an occupied square. */
+	private boolean _isOccupied = false;
 
 	/** Constructor which initializes the playing board and sets 
  	    it to empty. Also enters the winning start positions into
  	    _winTracker HashMap and intializes scores of each player to 0. */
 	GameBoard() {
- 		this.board = new String[_numRows][_numColumns];
+ 		this._board = new String[_numRows][_numColumns];
  		for (int i = 0; i < _numRows; i++) {
  			for (int j = 0; j < _numColumns; j++) {
- 				board[i][j] = " ";
+ 				_board[i][j] = " ";
  			}
  		}
  		/** Column start positions. */
@@ -43,16 +44,13 @@ class GameBoard {
  	}
 
  	/** Prints the representation of the GameBoard to the terminal. */
-	void printBoard() {
- 		System.out.println("   1   2   3");
- 		System.out.println("A  " + board[0][0] + " | " + board[0][1] +
- 								 " | " + board[0][2]);
- 		System.out.println("  -----------");
- 		System.out.println("B  " + board[1][0] + " | " + board[1][1] +
- 								 " | " + board[1][2]);
- 		System.out.println("  -----------");
- 		System.out.println("C  " + board[2][0] + " | " + board[2][1] +
- 								 " | " + board[2][2]);
+	String printBoard() {
+ 		return ("   1   2   3" + "\n" +
+		 		"A  " + _board[0][0] + " | " + _board[0][1] + " | " + _board[0][2] + "\n" +
+		 		"  -----------" + "\n" +
+		 		"B  " + _board[1][0] + " | " + _board[1][1] + " | " + _board[1][2] + "\n" +
+		 		"  -----------" + "\n" +
+		 		"C  " + _board[2][0] + " | " + _board[2][1] + " | " + _board[2][2]);
  	}
 
 	/** Determines the corresponding _winTracker index (0 or 1) given
@@ -82,11 +80,16 @@ class GameBoard {
  		return false;
  	}
 
+ 	/** Checks if last move was attempted in an already occupied square. */
+ 	boolean checkOccupied() {
+ 		return _isOccupied;
+ 	}
+
  	/** Checks if the Board is currently full. */
 	boolean isFull() {
  		for (int i = 0; i < _numRows; i++) {
  			for (int j = 0; j < _numColumns; j++) {
- 				if (board[i][i].equals(" "))
+ 				if (_board[i][j].equals(" "))
  					return false;
  			}
  		}
@@ -103,106 +106,117 @@ class GameBoard {
 		String[] positionsToCheck = null;
 		/** Check the position of desired move, make move if position
 		    is empty, update player game scores in _winTracker, and
-		    sets positions needed to be checked for winning move. */
+		    sets positions needed to be checked for winning move. Otherwise
+		    sets _isOccupied to true to explain that player tried to fill in
+		    already filled square. */
  		switch(coordinate) {
  			case "A1":
- 				if (board[0][0].equals(" ")) {
- 					board[0][0] = player.getPiece();
+ 				if (_board[0][0].equals(" ")) {
+ 					_board[0][0] = player.getPiece();
  					_winTracker.get("A")[winIndex]++;
  					_winTracker.get("1")[winIndex]++;
  					_winTracker.get("A1")[winIndex]++;
  					positionsToCheck = new String[] {"A", "1", "A1"};
+ 					_isOccupied = false;
  				} else {
- 					System.out.println("Position already occupied.");
+ 					_isOccupied = true;
  				}
  				break;
  			case "A2":
- 				if (board[0][1].equals(" ")) {
- 					board[0][1] = player.getPiece();
+ 				if (_board[0][1].equals(" ")) {
+ 					_board[0][1] = player.getPiece();
  					_winTracker.get("A")[winIndex]++;
  					_winTracker.get("2")[winIndex]++;
  					positionsToCheck = new String[] {"A", "2"};
+ 					_isOccupied = false;
  				} else {
- 					System.out.println("Position already occupied.");
+ 					_isOccupied = true;
  				}
  				break;
  			case "A3":
- 				if (board[0][2].equals(" ")) {
- 					board[0][2] = player.getPiece();
+ 				if (_board[0][2].equals(" ")) {
+ 					_board[0][2] = player.getPiece();
  					_winTracker.get("A")[winIndex]++;
  					_winTracker.get("3")[winIndex]++;
  					_winTracker.get("A3")[winIndex]++;
  					positionsToCheck = new String[] {"A", "3", "A3"};
+ 					_isOccupied = false;
  				} else {
- 					System.out.println("Position already occupied.");
+ 					_isOccupied = true;
  				}
  				break;
  			case "B1":
- 				if (board[1][0].equals(" ")) {
- 					board[1][0] = player.getPiece();
+ 				if (_board[1][0].equals(" ")) {
+ 					_board[1][0] = player.getPiece();
  					_winTracker.get("B")[winIndex]++;
  					_winTracker.get("1")[winIndex]++;
  					positionsToCheck = new String[] {"B", "1"};
+ 					_isOccupied = false;
  				} else {
- 					System.out.println("Position already occupied.");
+ 					_isOccupied = true;
  				}
  				break;
  			case "B2":
- 				if (board[1][1].equals(" ")) {
- 					board[1][1] = player.getPiece();
+ 				if (_board[1][1].equals(" ")) {
+ 					_board[1][1] = player.getPiece();
  					_winTracker.get("B")[winIndex]++;
  					_winTracker.get("2")[winIndex]++;
  					_winTracker.get("A1")[winIndex]++;
  					_winTracker.get("A3")[winIndex]++;
  					positionsToCheck = new String[] {"B", "2", "A1", "A3"};
+ 					_isOccupied = false;
  				} else {
- 					System.out.println("Position already occupied.");
+ 					_isOccupied = true;
  				}
  				break;
  			case "B3":
- 				if (board[1][2].equals(" ")) {
- 					board[1][2] = player.getPiece();
+ 				if (_board[1][2].equals(" ")) {
+ 					_board[1][2] = player.getPiece();
  					_winTracker.get("B")[winIndex]++;
  					_winTracker.get("3")[winIndex]++;
  					positionsToCheck = new String[] {"B", "3",};
+ 					_isOccupied = false;
  				} else {
- 					System.out.println("Position already occupied.");
+ 					_isOccupied = true;
  				}
  				break;
  			case "C1":
- 				if (board[2][0].equals(" ")) {
- 					board[2][0] = player.getPiece();
+ 				if (_board[2][0].equals(" ")) {
+ 					_board[2][0] = player.getPiece();
  					_winTracker.get("C")[winIndex]++;
  					_winTracker.get("1")[winIndex]++;
  					_winTracker.get("A3")[winIndex]++;
  					positionsToCheck = new String[] {"C", "1", "A3"};
+ 					_isOccupied = false;
  				} else {
- 					System.out.println("Position already occupied.");
+ 					_isOccupied = true;
  				}
  				break;
  			case "C2":
- 				if (board[2][1].equals(" ")) {
- 					board[2][1] = player.getPiece();
+ 				if (_board[2][1].equals(" ")) {
+ 					_board[2][1] = player.getPiece();
  					_winTracker.get("C")[winIndex]++;
  					_winTracker.get("2")[winIndex]++;
  					positionsToCheck = new String[] {"C", "2"};
+ 					_isOccupied = false;
  				} else {
- 					System.out.println("Position already occupied.");
+ 					_isOccupied = true;
  				}
  				break;
  			case "C3":
- 				if (board[2][2].equals(" ")) {
- 					board[2][2] = player.getPiece();
+ 				if (_board[2][2].equals(" ")) {
+ 					_board[2][2] = player.getPiece();
  					_winTracker.get("C")[winIndex]++;
  					_winTracker.get("3")[winIndex]++;
  					_winTracker.get("A1")[winIndex]++;
  					positionsToCheck = new String[] {"C", "3", "A1"};
+ 					_isOccupied = false;
  				} else {
- 					System.out.println("Position already occupied.");
+ 					_isOccupied = true;
  				}
  				break;
  			default:
- 				System.out.println("Invalid Board Selection.");
+ 			
  		}
  		/** If player enters valid input, checks if move results in win. */
  		if (positionsToCheck != null)

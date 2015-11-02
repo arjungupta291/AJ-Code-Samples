@@ -1,7 +1,6 @@
 /** Class to represent a player in our game of 
     Tic Tac Toe. */
-
-package TicTacToe;
+package com.tttapi.start.resources;
 
 class Player {
 
