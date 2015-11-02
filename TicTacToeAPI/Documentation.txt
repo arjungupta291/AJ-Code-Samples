@@ -2,7 +2,6 @@
 ### Complete Tic Tac Toe Documentation ###
 ##########################################
 
-
 Contents
 ########
 
