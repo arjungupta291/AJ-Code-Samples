@@ -1,7 +1,8 @@
 FILE_STORAGE_CONFIG = {
 	"SnPSecuritiesCompositionFile" : "RawFiles/SnPComposition/snp_securities.csv",
 	"HistoricalStockDataDirectory" : "RawFiles/HistoricalStockData/",
-	"ResultsFile" : "Results.csv"
+	"CompressedHistoricalDataFile" : "RawFiles/HistoricalStockData/all_data.csv",
+	"ResultsFile" : "Results/Results.csv"
 }
 
 ALPHAVANTAGE_API_CONFIG = {
@@ -15,10 +16,11 @@ ALPHAVANTAGE_API_CONFIG = {
 
 STOCK_DATA_CONFIG = {
 	"BenchmarkTicker_SPY" : 'SPY',
-	"NumberOfHistoricalDailyDataPoints" : 599,
+	"NumberOfHistoricalDailyDataPoints" : 600,
 	"DataColumns" : ['ticker', 'timestamp', 'open', 'high', 'low', 'close', 'volume'],
 	"NumericalColumns" : ['open', 'high', 'low', 'close', 'volume'],
-	"ReturnsPeriod" : 1
+	"ReturnsPeriod" : 1,
+	"ResultsColumns" : ["ticker", "beta", "avgVolume"]
 }
 
 def getFullSnPTickerList():
@@ -27,6 +29,9 @@ def getFullSnPTickerList():
 	with open(fname, 'r+') as f:
 		split_lines = [l.split(',') for l in f.readlines()]
 		return [s[ticker_index] for s in split_lines]
+
+def getNumberOfSecurities():
+	return len(getFullSnPTickerList())
 
 def buildApiRequest(ticker):
 	return (ALPHAVANTAGE_API_CONFIG["BaseUrl"] +

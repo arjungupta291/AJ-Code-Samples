@@ -1,58 +1,77 @@
-import time
+from timeit import default_timer as timer
 import pandas as pd
 import numpy as np
 from multiprocessing import Pool, cpu_count
 from functools import partial
 import Config
 
-def calc(ticker, spy_returns, spy_std):
-	try:
-		stock_returns, stock_std, avg_daily_vol = getHistoricalStockMetrics(ticker)
-		beta = calculateStockBeta(stock_returns, spy_returns, stock_std, spy_std)
-		return [(ticker, beta, avg_daily_vol)]
-	except:
-		return [(ticker, np.NaN, np.NaN)]
+def runBetaCalculator():
+	p = Pool(cpu_count())
+	allTickers = Config.getFullSnPTickerList()
+	print("Running Beta Calculator for: " + str(len(allTickers)) + " Securities")
+	print("Retreiving Benchmark Data")
+	benchmarkTicker = Config.STOCK_DATA_CONFIG["BenchmarkTicker_SPY"]
+	spy_returns, spy_avg_daily_vol = getHistoricalStockMetrics(benchmarkTicker)
+	print("Running Individual Stock Calculations")
+	start = timer()
+	results = p.map(partial(buildStockResult, spy_returns=spy_returns), allTickers)
+	end = timer()
+	print("All Betas Calculated. Time Taken: " + str(end - start))
+	p.close()
+	p.join()
+	print("Building Results DataFrame")
+	df_results = buildResultsDataFrame(results)
+	print("Writing to Results File")
+	writeToResultsFile(df_results)
+	return df_results
 
-def calculateStockBeta(stock_returns, spy_returns, stock_std, spy_std):
-	correlation = stock_returns.corrwith(spy_returns).values[0]
-	beta = correlation * (stock_std / spy_std)
+def buildStockResult(ticker, spy_returns):
+	try:
+		stock_returns, avg_daily_vol = getHistoricalStockMetrics(ticker)
+		beta = calculateStockBeta(stock_returns, spy_returns)
+		return np.array([ticker, beta, avg_daily_vol])
+	except:
+		return np.array([ticker, np.NaN, np.NaN])
+
+def calculateStockBeta(stock_returns, spy_returns):
+	stock_returns_available = len(stock_returns)
+	X = np.stack((stock_returns.values[1:],  spy_returns.values[1:stock_returns_available]), axis=0)
+	covariance_matrix = np.cov(X)
+	beta = covariance_matrix[0][1] / covariance_matrix[1][1]
 	return beta
 
 def getHistoricalStockMetrics(ticker):
-	numberOfRows = Config.STOCK_DATA_CONFIG["NumberOfHistoricalDailyDataPoints"]
-	columnNames = Config.STOCK_DATA_CONFIG["DataColumns"]
-	df_stock = pd.DataFrame(index=np.arange(0, numberOfRows), columns=columnNames)
-	populateDataframe(ticker, df_stock)
-	stock_close_prices = df_stock.iloc[:,5:6]
-	stock_returns = stock_close_prices.pct_change(1)
-	stock_std = stock_returns.std().values[0]
+	df_stock = buildStockDataframe(ticker)
+	returns_period = Config.STOCK_DATA_CONFIG["ReturnsPeriod"]
+	stock_returns = df_stock["close"].pct_change(returns_period)
 	average_daily_volume = df_stock["volume"].mean()
-	return stock_returns, stock_std, average_daily_volume
+	return stock_returns, average_daily_volume
 
-def populateDataframe(ticker, df):
+def buildStockDataframe(ticker):
 	fname = Config.getHistoricalDataFilename(ticker)
+	columnNames = Config.STOCK_DATA_CONFIG["DataColumns"]
 	with open(fname, 'r+') as f:
-		split_lines = [l.strip('\n\r').split(',') for l in f.readlines()[1:]]
-		for r in range(len(split_lines)):
-			df.iloc[r] = [ticker] + split_lines[r]
-	configureNumericalColumns(df)
-
-def configureNumericalColumns(df):
+		lines = [l.strip('\n\r').split(',') for l in f.readlines()[1:]]
+		df = pd.DataFrame(index=np.arange(0, len(lines)), columns=columnNames)
+		for r in range(len(lines)):
+			df.loc[r] = [ticker] + lines[r]
 	numericalColumns = Config.STOCK_DATA_CONFIG["NumericalColumns"]
-	df[numericalColumns] = df[numericalColumns].apply(pd.to_numeric)
+	configureNumericalColumns(df, numericalColumns)
+	return df
 
+def buildResultsDataFrame(calculator_results):
+	results_columns = Config.STOCK_DATA_CONFIG["ResultsColumns"]
+	df = pd.DataFrame(index=np.arange(0, len(calculator_results)), columns=results_columns)
+	for r in range(len(calculator_results)):
+		df.loc[r] = calculator_results[r]
+	configureNumericalColumns(df, ["beta", "avgVolume"])
+	return df
 
-if __name__ == '__main__':
-	p = Pool(cpu_count() + 1)
-	allTickers = Config.getFullSnPTickerList()
-	benchmarkTicker = Config.STOCK_DATA_CONFIG["BenchmarkTicker_SPY"]
-	spy_returns, spy_std, spy_avg_daily_vol = getHistoricalStockMetrics(benchmarkTicker)
-	time_start = time.time()
-	results = p.map(partial(calc, spy_returns=spy_returns, spy_std=spy_std), allTickers)
-	p.close()
-	p.join()
-	time_end = time.time()
-	print("All Betas Calculated. Time Taken: " + str(time_end - time_start))
-	for r in results:
-		print(r)
+def configureNumericalColumns(df, columns):
+	df[columns] = df[columns].apply(pd.to_numeric)
+
+def writeToResultsFile(df_results):
+	results_file = Config.FILE_STORAGE_CONFIG["ResultsFile"]
+	df_results.to_csv(results_file)
+
 

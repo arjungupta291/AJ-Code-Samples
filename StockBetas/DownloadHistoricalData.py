@@ -11,7 +11,18 @@ def tickerDataExists(ticker):
 	fname = Config.getHistoricalDataFilename(ticker)
 	return os.path.isfile(fname)
 
-def downloadHistoricalStockData(tickers, delay=0):
+def compressHistoricalDataIntoSingleFile():
+	tickers = Config.getFullSnPTickerList()
+	dfile = Config.FILE_STORAGE_CONFIG["CompressedHistoricalDataFile"]
+	with open(dfile, "w") as dest:
+		for t in tickers:
+			tfile = Config.getHistoricalDataFilename(t)
+			with open(tfile, "r") as src:
+				lines = [t + "," + l for l in src.readlines()[1:]]
+				dest.writelines(lines)
+			os.remove(tfile)
+
+def downloadHistoricalStockData(tickers):
 	urls = [Config.buildApiRequest(t) for t in tickers]
 	requests = (grequests.get(u, stream=True) for u in urls)
 	responses = grequests.map(requests)
@@ -26,9 +37,9 @@ def downloadHistoricalStockData(tickers, delay=0):
 				writer = csv.writer(f)
 				reader = csv.reader(r.text.splitlines())
 
-				points = -1
+				points = 0
 				for row in reader:
-					if points < Config.STOCK_DATA_CONFIG["NumberOfHistoricalDailyDataPoints"]:
+					if points <= Config.STOCK_DATA_CONFIG["NumberOfHistoricalDailyDataPoints"]:
 						writer.writerow(row)
 						points += 1
 					else:
@@ -59,7 +70,8 @@ if __name__ == '__main__':
 			print("Starting Batch: " + str(chunk))
 			succeded, failed = downloadHistoricalStockData(chunk)
 			print("Succeeed: " + str(len(succeded)), "Failed: " + str(failed))
-			time.sleep(1)
+			if failed:
+				time.sleep(3)
 		total_async_time_end = time.time()
 		print("All Requests Complete. Total Time: " + str(total_async_time_end - total_async_time_start))
 
