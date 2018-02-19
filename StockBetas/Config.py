@@ -14,6 +14,7 @@ ALPHAVANTAGE_API_CONFIG = {
 }
 
 STOCK_DATA_CONFIG = {
+	"BenchmarkTicker_SPY" : 'SPY',
 	"NumberOfHistoricalDailyDataPoints" : 599,
 	"DataColumns" : ['ticker', 'timestamp', 'open', 'high', 'low', 'close', 'volume'],
 	"NumericalColumns" : ['open', 'high', 'low', 'close', 'volume'],
