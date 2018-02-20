@@ -14,7 +14,8 @@ ALPHAVANTAGE_API_CONFIG = {
 	"QueryString" : "function={0}&symbol={1}&apikey={2}&datatype={3}&outputsize={4}",
 	"Function" : "TIME_SERIES_DAILY",
 	"DataFormat" : "csv",
-	"OutputSize" : "full"
+	"OutputSize" : "full",
+	"BatchSize" : 5
 }
 
 STOCK_DATA_CONFIG = {

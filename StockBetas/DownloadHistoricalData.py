@@ -3,9 +3,6 @@ import csv
 import time
 import Config
 
-def getSnPTickerListForDownload():
-	return [t for t in Config.getFullSnPTickerList() if not Config.tickerDataExists(t)]
-
 def downloadHistoricalStockData(tickers):
 	urls = [Config.buildApiRequest(t) for t in tickers]
 	requests = (grequests.get(u, stream=True) for u in urls)
@@ -36,6 +33,9 @@ def downloadHistoricalStockData(tickers):
 
 	return succeeded, failed
 
+def getSnPTickerListForDownload():
+	return [t for t in Config.getFullSnPTickerList() if not Config.tickerDataExists(t)]
+
 def batch(iterable, chunk = 1):
     total_length = len(iterable)
     for ndx in range(0, total_length, chunk):
@@ -50,12 +50,13 @@ if __name__ == '__main__':
 		print("Starting AlphaVantage Batch Historical Stock Data Download")
 		print("Retrieving Data for " + str(len(tickers)) + " Securities")
 		total_async_time_start = time.time()
-		for chunk in batch(tickers, 5):
+		batch_size = Config.ALPHAVANTAGE_API_CONFIG["BatchSize"]
+		for chunk in batch(tickers, batch_size):
 			print("Starting Batch: " + str(chunk))
 			succeded, failed = downloadHistoricalStockData(chunk)
 			print("Succeeed: " + str(len(succeded)), "Failed: " + str(failed))
 			if failed:
-				time.sleep(3)
+				time.sleep(2)
 		total_async_time_end = time.time()
 		print("All Requests Complete. Total Time: " + str(total_async_time_end - total_async_time_start))
 

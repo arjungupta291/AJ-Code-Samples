@@ -5,7 +5,6 @@ import Config
 
 def run():
 	if Config.resultsAlreadyComputed():
-		print("Results File Already Exists")
 		results_file = Config.FILE_STORAGE_CONFIG["ResultsFile"]
 		df_results = pd.read_csv(results_file)
 	else:

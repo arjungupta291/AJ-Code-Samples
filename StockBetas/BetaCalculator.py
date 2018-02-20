@@ -34,8 +34,8 @@ def buildStockResult(ticker, spy_returns):
 		return np.array([ticker, np.NaN, np.NaN])
 
 def calculateStockBeta(stock_returns, spy_returns):
-	stock_returns_available = len(stock_returns)
-	X = np.stack((stock_returns.values[1:],  spy_returns.values[1:stock_returns_available]), axis=0)
+	num_stock_returns = len(stock_returns)
+	X = np.stack((stock_returns.values[1:], spy_returns.values[1:num_stock_returns]), axis=0)
 	covariance_matrix = np.cov(X)
 	beta = covariance_matrix[0][1] / covariance_matrix[1][1]
 	return beta
