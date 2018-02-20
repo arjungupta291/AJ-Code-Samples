@@ -1,26 +1,10 @@
 import grequests
 import csv
-import os
 import time
 import Config
 
 def getSnPTickerListForDownload():
-	return [t for t in Config.getFullSnPTickerList() if not tickerDataExists(t)]
-
-def tickerDataExists(ticker):
-	fname = Config.getHistoricalDataFilename(ticker)
-	return os.path.isfile(fname)
-
-def compressHistoricalDataIntoSingleFile():
-	tickers = Config.getFullSnPTickerList()
-	dfile = Config.FILE_STORAGE_CONFIG["CompressedHistoricalDataFile"]
-	with open(dfile, "w") as dest:
-		for t in tickers:
-			tfile = Config.getHistoricalDataFilename(t)
-			with open(tfile, "r") as src:
-				lines = [t + "," + l for l in src.readlines()[1:]]
-				dest.writelines(lines)
-			os.remove(tfile)
+	return [t for t in Config.getFullSnPTickerList() if not Config.tickerDataExists(t)]
 
 def downloadHistoricalStockData(tickers):
 	urls = [Config.buildApiRequest(t) for t in tickers]

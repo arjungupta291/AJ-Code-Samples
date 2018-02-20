@@ -7,7 +7,7 @@ import Config
 
 def runBetaCalculator():
 	p = Pool(cpu_count())
-	allTickers = Config.getFullSnPTickerList()
+	allTickers = Config.getSnPTickerListForAnalysis()
 	print("Running Beta Calculator for: " + str(len(allTickers)) + " Securities")
 	print("Retreiving Benchmark Data")
 	benchmarkTicker = Config.STOCK_DATA_CONFIG["BenchmarkTicker_SPY"]

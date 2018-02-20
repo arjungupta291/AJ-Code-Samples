@@ -1,8 +1,11 @@
+import os
+
 FILE_STORAGE_CONFIG = {
 	"SnPSecuritiesCompositionFile" : "RawFiles/SnPComposition/snp_securities.csv",
 	"HistoricalStockDataDirectory" : "RawFiles/HistoricalStockData/",
 	"CompressedHistoricalDataFile" : "RawFiles/HistoricalStockData/all_data.csv",
-	"ResultsFile" : "Results/Results.csv"
+	"ResultsDirectory" : "Results/",
+	"ResultsFile" : "Results/BetaResults.csv"
 }
 
 ALPHAVANTAGE_API_CONFIG = {
@@ -16,7 +19,7 @@ ALPHAVANTAGE_API_CONFIG = {
 
 STOCK_DATA_CONFIG = {
 	"BenchmarkTicker_SPY" : 'SPY',
-	"NumberOfHistoricalDailyDataPoints" : 600,
+	"NumberOfHistoricalDailyDataPoints" : 507,
 	"DataColumns" : ['ticker', 'timestamp', 'open', 'high', 'low', 'close', 'volume'],
 	"NumericalColumns" : ['open', 'high', 'low', 'close', 'volume'],
 	"ReturnsPeriod" : 1,
@@ -29,6 +32,13 @@ def getFullSnPTickerList():
 	with open(fname, 'r+') as f:
 		split_lines = [l.split(',') for l in f.readlines()]
 		return [s[ticker_index] for s in split_lines]
+
+def getSnPTickerListForAnalysis():
+	fname = FILE_STORAGE_CONFIG["SnPSecuritiesCompositionFile"]
+	ticker_index = 0
+	with open(fname, 'r+') as f:
+		split_lines = [l.split(',') for l in f.readlines()]
+		return [s[ticker_index] for s in split_lines if s[ticker_index] != 'SPY']
 
 def getNumberOfSecurities():
 	return len(getFullSnPTickerList())
@@ -44,3 +54,11 @@ def buildApiRequest(ticker):
 def getHistoricalDataFilename(ticker):
 	return (FILE_STORAGE_CONFIG["HistoricalStockDataDirectory"] +
 		    ticker + ".csv")
+
+def tickerDataExists(ticker):
+	fname = getHistoricalDataFilename(ticker)
+	return os.path.isfile(fname)
+
+def resultsAlreadyComputed():
+	fname = FILE_STORAGE_CONFIG["ResultsFile"]
+	return os.path.isfile(fname)
